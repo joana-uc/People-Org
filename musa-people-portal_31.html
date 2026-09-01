@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Musa — People Portal</title>
+<style>
+:root{--black:#222222;--orange:#FFBA86;--blue:#8AA5FF;--cream:#F9EDE4;--gray:#F5F5F5;--white:#fff;--muted:#888;--border:#E0E0E0;--shadow:0 4px 20px rgba(34,34,34,.10);--shadow-lg:0 8px 40px rgba(34,34,34,.18);--r:10px;--rs:7px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Georgia',serif;background:var(--gray);color:var(--black);min-height:100vh;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--black);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:28px;z-index:1000;}
+.login-logo{font-size:2.2rem;font-weight:bold;color:#fff;letter-spacing:-1px;}.login-logo span{color:var(--orange);}
+.login-box{background:#2e2e2e;border-radius:var(--r);padding:36px 44px;display:flex;flex-direction:column;gap:14px;width:320px;border:1px solid #3a3a3a;}
+.login-title{font-size:.85rem;color:#aaa;text-align:center;margin-bottom:2px;}
+.login-box input{width:100%;padding:11px 14px;border-radius:var(--rs);border:1.5px solid #444;background:#222;color:#fff;font-size:.95rem;font-family:'Georgia',serif;outline:none;letter-spacing:2px;}
+.login-box input:focus{border-color:var(--orange);}
+.login-box button{width:100%;padding:11px;background:var(--orange);color:var(--black);border:none;border-radius:var(--rs);font-size:.95rem;font-family:'Georgia',serif;font-weight:bold;cursor:pointer;}
+.login-box button:hover{opacity:.85;}
+.login-err{color:#ff7070;font-size:.82rem;text-align:center;min-height:16px;}
+
+/* HEADER */
+header{background:var(--black);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.hdr-logo{font-size:1.2rem;font-weight:bold;color:#fff;}.hdr-logo span{color:var(--orange);}
+.hdr-right{display:flex;align-items:center;gap:14px;}
+#search-input{padding:6px 13px;border-radius:18px;border:1.5px solid #3a3a3a;background:#2e2e2e;color:#fff;font-size:.82rem;width:210px;outline:none;font-family:'Georgia',serif;}
+#search-input:focus{border-color:var(--orange);}
+.hdr-meta{font-size:.75rem;color:#666;font-family:'Georgia',serif;}
+
+/* APP */
+#app{display:none;}
+#org-canvas{padding:28px 16px 80px;overflow-x:auto;min-height:calc(100vh - 52px);}
+.tree-root{display:flex;flex-direction:column;align-items:center;min-width:max-content;margin:0 auto;}
+
+/* CONNECTORS */
+.v-line{width:2px;height:20px;background:var(--border);margin:0 auto;}
+.h-row{display:flex;gap:12px;justify-content:center;align-items:flex-start;flex-wrap:nowrap;}
+
+/* NODE */
+.node{background:#fff;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;width:140px;cursor:pointer;position:relative;transition:border-color .15s,transform .12s,box-shadow .15s;user-select:none;flex-shrink:0;}
+.node:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:var(--shadow);}
+.node.has-data{border-left:3px solid var(--orange);}
+.node.ceo{background:var(--black);border-color:var(--black);width:152px;}
+.node.ceo .n-name{color:#fff;font-size:.88rem;}.node.ceo .n-role{color:var(--orange);}
+.node.coo{background:#2d2d2d;border-color:#444;width:152px;}
+.node.coo .n-name{color:#fff;font-size:.88rem;}.node.coo .n-role{color:#aaa;}
+.node.head{border-color:#bbb;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+.n-name{font-size:.78rem;font-weight:bold;font-family:'Georgia',serif;line-height:1.25;margin-bottom:2px;}
+.n-role{font-size:.65rem;color:var(--muted);line-height:1.25;}
+.n-badge{display:inline-block;font-size:.56rem;padding:1px 5px;border-radius:4px;margin-top:4px;font-weight:bold;}
+.b-pj{background:#e8eeff;color:var(--blue);}.b-clt{background:#fff5ec;color:#c97000;}.b-est{background:#f0f8f0;color:#4a8f4a;}
+
+
+/* SECTION LABELS */
+.sec-lbl{font-size:.58rem;font-weight:bold;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);background:var(--gray);border:1px solid var(--border);border-radius:5px;padding:2px 8px;margin-bottom:5px;white-space:nowrap;text-align:center;}
+
+/* COLUMN / TEAM LAYOUTS */
+.col{display:flex;flex-direction:column;align-items:center;gap:7px;}
+.team-wrap{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:460px;}
+.branch-container{display:flex;flex-direction:column;align-items:center;}
+
+/* SEARCH */
+.node.hl{border-color:var(--orange)!important;box-shadow:0 0 0 2px var(--orange);}
+.node.dim{opacity:.2;pointer-events:none;}
+
+/* MODAL */
+#ov{position:fixed;inset:0;background:rgba(34,34,34,.55);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+#ov.open{display:flex;}
+#modal{background:#fff;border-radius:var(--r);width:510px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.mhd{background:var(--black);padding:22px 26px 18px;border-radius:var(--r) var(--r) 0 0;position:sticky;top:0;}
+.mhd-name{font-size:1.2rem;font-weight:bold;color:#fff;}
+.mhd-role{font-size:.82rem;color:#aaa;margin-top:3px;}
+.mhd-close{position:absolute;top:18px;right:18px;background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;padding:2px 6px;border-radius:4px;}
+.mhd-close:hover{background:rgba(255,255,255,.1);color:#fff;}
+.mbody{padding:22px 26px 26px;display:flex;flex-direction:column;gap:18px;}
+.sec-ttl{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:bold;border-bottom:1px solid var(--border);padding-bottom:5px;margin-bottom:9px;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;}
+.ii label{display:block;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;}
+.ii .val{font-size:.92rem;font-weight:bold;font-family:'Georgia',serif;}
+.val.money{color:#1a6e2a;}.val.dimv{color:#444;}
+.tenure-wrap{background:var(--border);border-radius:2px;height:4px;margin-top:5px;width:100%;}
+.tenure-fill{height:4px;border-radius:2px;background:var(--orange);}
+.esop-wrap{background:#f9f6ff;border:1.5px solid #ddd5ff;border-radius:var(--rs);padding:15px;}
+.esop-none{background:var(--gray);border-radius:var(--rs);padding:12px 14px;color:var(--muted);font-size:.83rem;text-align:center;}
+.esop-ttl{font-size:1.4rem;font-weight:bold;color:#5534c6;}
+.esop-sub{font-size:.75rem;color:#888;margin-top:2px;}
+.esop-grants{display:flex;flex-direction:column;gap:7px;margin-top:10px;}
+.egrant{background:#fff;border:1px solid #e5deff;border-radius:6px;padding:9px 11px;}
+.egrant-top{display:flex;justify-content:space-between;margin-bottom:3px;}
+.egrant-round{font-size:.68rem;color:#7c5cbf;font-weight:bold;text-transform:uppercase;}
+.egrant-qty{font-size:.83rem;font-weight:bold;color:#333;}
+.egrant-meta{font-size:.7rem;color:#888;}
+.vbar-wrap{background:#ede8ff;border-radius:3px;height:4px;margin-top:6px;}
+.vbar-fill{height:4px;border-radius:3px;background:#7c5cbf;}
+.merit-box{background:var(--cream);border-radius:var(--rs);padding:15px;}
+.merit-row{display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap;}
+.mf{flex:1;min-width:120px;}
+.mf label{display:block;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+.mf input{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:6px;font-size:.88rem;font-family:'Georgia',serif;background:#fff;outline:none;}
+.mf input:focus{border-color:var(--orange);}
+.msave{padding:8px 16px;background:var(--black);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-family:'Georgia',serif;cursor:pointer;}
+.msave:hover{background:#444;}
+.msaved{font-size:.73rem;color:#4a8f4a;margin-top:5px;min-height:15px;}
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px;}
+
+/* STATUS BADGE */
+.status-wrap{position:relative;margin-top:6px;}
+.status-btn{font-size:.52rem;font-weight:bold;letter-spacing:.04em;padding:2px 7px;border-radius:4px;border:none;cursor:pointer;font-family:'Georgia',serif;line-height:1.5;transition:opacity .15s;display:inline-block;}
+.status-btn:hover{opacity:.75;}
+.status-none{background:var(--gray);color:#bbb;border:1px dashed #ddd;}
+.status-chave{background:#fff3cd;color:#856404;}
+.status-licenca{background:#d1ecf1;color:#0c5460;}
+.status-atencao{background:#f8d7da;color:#842029;}
+.status-menu{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid var(--border);border-radius:var(--rs);box-shadow:var(--shadow-lg);z-index:200;overflow:hidden;min-width:150px;display:none;}
+.status-menu.open{display:block;}
+.status-opt{display:block;width:100%;text-align:left;padding:7px 12px;border:none;background:none;font-size:.78rem;font-family:'Georgia',serif;cursor:pointer;color:var(--black);}
+.status-opt:hover{background:var(--gray);}
+.status-opt.opt-none{color:#aaa;}
+.status-opt.opt-chave{color:#856404;}
+.status-opt.opt-licenca{color:#0c5460;}
+.status-opt.opt-atencao{color:#842029;}
+/* ESOP indicator inline */
+.esop-pill{display:inline-block;font-size:.52rem;font-weight:bold;background:#f0ebff;color:#7c5cbf;border-radius:4px;padding:2px 6px;margin-top:5px;letter-spacing:.03em;}
+
+/* PERFORMANCE BLOCK */
+.perf-wrap{display:flex;align-items:center;gap:14px;background:var(--gray);border-radius:var(--rs);padding:14px 16px;}
+.perf-score{font-size:1.8rem;font-weight:bold;font-family:'Georgia',serif;}
+.perf-score.perf-critico{color:#c0392b;}
+.perf-score.perf-dentro{color:#2e7d32;}
+.perf-score.perf-acima{color:#1565c0;}
+.perf-score.perf-none{color:#999;}
+.perf-meta{display:flex;flex-direction:column;gap:3px;}
+.perf-zone{font-size:.8rem;font-weight:bold;}
+.perf-zone.perf-critico{color:#c0392b;}
+.perf-zone.perf-dentro{color:#2e7d32;}
+.perf-zone.perf-acima{color:#1565c0;}
+.perf-zone.perf-none{color:#999;}
+.perf-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+.perf-none-msg{color:var(--muted);font-size:.85rem;font-family:'Georgia',serif;text-align:center;padding:12px;}
+
+/* NEW HIRE CARD */
+.nh-card{background:#fffbe6;border:1.5px dashed #f0c040;border-radius:var(--rs);padding:9px 12px;width:140px;flex-shrink:0;cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative;}
+.nh-card:hover{border-color:#d4a800;box-shadow:var(--shadow);}
+.nh-type{font-size:.56rem;font-weight:bold;text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;}
+.nh-type.new-hc{color:#1a6e2a;}
+.nh-type.replace{color:#c0392b;}
+.nh-label{font-size:.78rem;font-weight:bold;font-family:'Georgia',serif;color:#7a5800;line-height:1.25;margin-bottom:2px;}
+.nh-role{font-size:.65rem;color:#a07000;line-height:1.25;}
+.nh-manager{font-size:.6rem;color:#888;margin-top:3px;}
+
+/* PROJETO SAVED DISPLAY on modal */
+.projeto-saved-box{background:#fff;border:1px solid var(--border);border-radius:6px;padding:11px 14px;margin-top:10px;}
+.projeto-saved-date{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+.projeto-saved-text{font-size:.88rem;font-family:'Georgia',serif;color:var(--black);line-height:1.5;white-space:pre-wrap;}
+
+/* ORG FUTURO TAB */
+.tab-bar{display:flex;gap:2px;padding:0 28px;background:var(--black);border-top:1px solid #333;}
+.tab-btn{padding:8px 20px;font-size:.8rem;font-family:'Georgia',serif;border:none;background:none;color:#888;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s;}
+.tab-btn.active{color:var(--orange);border-bottom-color:var(--orange);}
+.tab-btn:hover{color:#ccc;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+#org-futuro-banner{background:#fffbe6;border-bottom:1.5px solid #f0c040;padding:9px 28px;font-size:.8rem;color:#7a5800;font-family:'Georgia',serif;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-logo">Musa<span>.</span></div>
+  <div class="login-box">
+    <div class="login-title">People Portal · Acesso Restrito</div>
+    <input type="password" id="pw" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="lerr"></div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="hdr-logo">Musa<span>.</span> People</div>
+    <div class="hdr-right">
+      <input type="text" id="search-input" placeholder="Buscar colaborador…" oninput="doSearch(this.value)">
+      <button onclick="openNHModal()" style="padding:6px 14px;background:var(--orange);color:var(--black);border:none;border-radius:6px;font-size:.78rem;font-family:'Georgia',serif;font-weight:bold;cursor:pointer;">+ New Hire</button>
+      <div class="hdr-meta" id="hc-meta"></div>
+    </div>
+  </header>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('atual')">Org Atual</button>
+    <button class="tab-btn" onclick="switchTab('futuro')">Org Futuro</button>
+  </div>
+  <div id="tab-atual" class="tab-panel active">
+    <div id="org-canvas"><div id="org-root" class="tree-root"></div></div>
+  </div>
+  <div id="tab-futuro" class="tab-panel">
+    <div id="org-futuro-banner" id="futuro-banner" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+      <span id="futuro-banner-text">Visualização com novas posições e vagas abertas. New hires aparecem em amarelo; replaces mostram a vaga no lugar da pessoa.</span>
+      <button onclick="renderOrgFuturo()" style="flex-shrink:0;padding:6px 16px;background:#7a5800;color:#fff;border:none;border-radius:6px;font-size:.78rem;font-family:'Georgia',serif;cursor:pointer;white-space:nowrap;">↺ Atualizar</button>
+    </div>
+    <div id="org-canvas-futuro" style="padding:28px 16px 80px;overflow-x:auto;min-height:calc(100vh - 100px);"><div id="org-root-futuro" class="tree-root"></div></div>
+  </div>
+</div>
+
+<div id="ov" onclick="if(event.target===this)closeModal()">
+  <div id="modal">
+    <div class="mhd">
+      <div class="mhd-name" id="m-name">—</div>
+      <div class="mhd-role" id="m-role">—</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <div id="m-esop-pill"></div>
+        <div id="m-status-wrap" class="status-wrap" style="margin-top:0;">
+          <button class="status-btn status-none" id="m-status-btn">···</button>
+          <div class="status-menu" id="m-status-menu">
+            <button class="status-opt opt-none"    data-val="none">— Sem status</button>
+            <button class="status-opt opt-chave"   data-val="chave">⭐ Pessoa Chave</button>
+            <button class="status-opt opt-licenca" data-val="licenca">🔵 Licença / Afastamento</button>
+            <button class="status-opt opt-atencao" data-val="atencao">🔴 Atenção</button>
+          </div>
+        </div>
+      </div>
+      <button class="mhd-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody">
+      <div>
+        <div class="sec-ttl">Dados do Colaborador</div>
+        <div class="info-grid">
+          <div class="ii"><label>Cargo AS IS</label><div class="val" id="m-asis">—</div></div>
+          <div class="ii"><label>Leveling</label><div class="val" id="m-level">—</div></div>
+          <div class="ii"><label>Tipo de Contrato</label><div class="val" id="m-tipo">—</div></div>
+          <div class="ii"><label>Tempo de Empresa</label><div class="val dimv" id="m-tenure">—</div><div class="tenure-wrap"><div class="tenure-fill" id="m-tbar"></div></div></div>
+          <div class="ii"><label>Salário Base</label><div class="val money" id="m-sal">—</div></div>
+          <div class="ii"><label>Custo Total</label><div class="val money" id="m-custo">—</div></div>
+        </div>
+      </div>
+      <div><div class="sec-ttl">Avaliação de Desempenho · 2º Sem. 2025</div><div id="m-perf"></div></div>
+      <div><div class="sec-ttl">ESOP</div><div id="m-esop"></div></div>
+      <div>
+        <div class="sec-ttl">Data de Mérito</div>
+        <div class="merit-box">
+          <div class="merit-row">
+            <div class="mf"><label>Data do último mérito</label><input type="date" id="m-mdate"></div>
+            <div class="mf"><label>Observação</label><input type="text" id="m-mnote" placeholder="ex: promoção, reajuste…"></div>
+            <button class="msave" onclick="saveMerit()">Salvar</button>
+          </div>
+          <div class="msaved" id="m-msaved"></div>
+        </div>
+      </div>
+      <div>
+        <div class="sec-ttl">Projeto / Entrega Q2.2026</div>
+        <div class="merit-box">
+          <div id="m-projeto-display"></div>
+          <div class="merit-row" style="margin-top:8px;">
+            <div class="mf" style="flex:1 1 100%;"><label>Editar descrição</label><textarea id="m-projeto" placeholder="ex: Liderar migração do squad X, entregar revisão contratual Y…" rows="3" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:.88rem;font-family:'Georgia',serif;background:#fff;outline:none;resize:vertical;"></textarea></div>
+          </div>
+          <div class="merit-row" style="margin-top:9px;">
+            <button class="msave" onclick="saveProjeto()">Salvar</button>
+            <button class="msave" style="background:#fff;color:#a33;border:1.5px solid #e0b0b0;" onclick="clearProjeto()">Limpar</button>
+          </div>
+          <div class="msaved" id="m-projeto-saved"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── EMPLOYEES (ativos da planilha — somente 1 linha por pessoa) ─────────────
+const EMP = [
+  {nome:"Alex Rappaport",tipo_contrato:"CLT",cargo_asis:"GERENTE DE MARKETING",cargo_leveling:"M1",data_admissao:"2021-12-01",salario_base:20964.06,custo_total_reajuste:34455.84},
+  {nome:"Anderson Da Silva Ferreira",tipo_contrato:"PJ",cargo_asis:"HEAD COMERCIAL",cargo_leveling:"M3",data_admissao:"2025-04-01",salario_base:40000.0,custo_total_reajuste:51868.7},
+  {nome:"Anderson Yuji Taniguchi",tipo_contrato:"PJ",cargo_asis:"CFO | COO",cargo_leveling:"M4",data_admissao:"2021-07-19",salario_base:65000.0,custo_total_reajuste:83690.89},
+  {nome:"Arthur Mattar De Carvalho Teixeira",tipo_contrato:"PJ",cargo_asis:"ESPECIALISTA DE PROJETOS",cargo_leveling:"L5",data_admissao:"2024-10-15",salario_base:15400.0,custo_total_reajuste:20577.53},
+  {nome:"Artur Albertini Leal",tipo_contrato:"Aprendiz",cargo_asis:"APRENDIZ TI",cargo_leveling:"T1",data_admissao:"2025-07-10",salario_base:1326.0,custo_total_reajuste:4258.94},
+  {nome:"Avila Ramony Ferreira Da Silva",tipo_contrato:"CLT",cargo_asis:"ASSISTENTE DE COMPLIANCE",cargo_leveling:"L2",data_admissao:"2024-05-06",salario_base:3500.0,custo_total_reajuste:7457.34},
+  {nome:"Carlos Alexandre Pereira De Lima",tipo_contrato:"PJ",cargo_asis:"COORDENADOR(A) DE OPERAÇÕES",cargo_leveling:"L5",data_admissao:"2022-03-09",salario_base:12468.0,custo_total_reajuste:17368.76},
+  {nome:"Carlos Henrique Alves Dos Santos",tipo_contrato:"PJ",cargo_asis:"PRODUCT MANAGER",cargo_leveling:"L5",data_admissao:"2024-12-09",salario_base:17922.75,custo_total_reajuste:23596.19},
+  {nome:"Cassio Rafael Oliveira Silva",tipo_contrato:"PJ",cargo_asis:"HEAD DE OPERAÇÕES",cargo_leveling:"M3",data_admissao:"2021-09-13",salario_base:40000.0,custo_total_reajuste:51868.7},
+  {nome:"Daniela Caroline da Silva",tipo_contrato:"CLT",cargo_asis:"ANALISTA FINANCEIRO PL",cargo_leveling:"L3",data_admissao:"2026-02-02",salario_base:6000.0,custo_total_reajuste:11533.66},
+  {nome:"Daniela Mendes Cavalcanti",tipo_contrato:"PJ",cargo_asis:"Especialista de People",cargo_leveling:"L5",data_admissao:"2023-10-10",salario_base:13642.07,custo_total_reajuste:19491.07},
+  {nome:"Danielle Bispo Da Silva",tipo_contrato:"CLT",cargo_asis:"ASSISTENTE DE OPERAÇÕES I",cargo_leveling:"L2",data_admissao:"2023-12-04",salario_base:3500.0,custo_total_reajuste:8100.25},
+  {nome:"Debora Eduarda De Lima Pires",tipo_contrato:"CLT",cargo_asis:"ANALISTA DE OPERAÇÕES JR",cargo_leveling:"L2",data_admissao:"2025-01-20",salario_base:3712.21,custo_total_reajuste:8017.32},
+  {nome:"Diego Rodrigues Marques",tipo_contrato:"PJ",cargo_asis:"DESENVOLVEDOR FULL STACK SÊNIOR",cargo_leveling:"T4",data_admissao:"2026-07-13",salario_base:16000.0,custo_total_reajuste:21587.38},
+  {nome:"Edigar Reis Barbosa",tipo_contrato:"PJ",cargo_asis:"GERENTE DE OPERAÇÕES",cargo_leveling:"M1",data_admissao:"2024-05-13",salario_base:18400.0,custo_total_reajuste:24459.44},
+  {nome:"Erika Yamada Isobata",tipo_contrato:"PJ",cargo_asis:"PRODUCT DESIGN LEAD",cargo_leveling:"L5",data_admissao:"2024-04-22",salario_base:17663.0,custo_total_reajuste:23573.67},
+  {nome:"Ewerton De Lira Lopes",tipo_contrato:"CLT",cargo_asis:"ANALISTA DE PLANEJAMENTO LOGÍSTICO",cargo_leveling:"L3",data_admissao:"2022-06-20",salario_base:3922.59,custo_total_reajuste:8102.38},
+  {nome:"Felipe Pereira Barreiros",tipo_contrato:"PJ",cargo_asis:"DESENVOLVEDOR SÊNIOR",cargo_leveling:"T4",data_admissao:"2025-09-29",salario_base:17166.6,custo_total_reajuste:22693.05},
+  {nome:"Flavia Satomi Miura",tipo_contrato:"CLT",cargo_asis:"COORDENADOR(A) DE INTELIGENCIA LOGISTICA",cargo_leveling:"M1",data_admissao:"2022-10-20",salario_base:21792.16,custo_total_reajuste:35736.11},
+  {nome:"Gabriel Ponczyk",tipo_contrato:"PJ",cargo_asis:"EXECUTIVO(A) DE VENDAS SR",cargo_leveling:"L5",data_admissao:"2022-03-07",salario_base:15585.0,custo_total_reajuste:20798.49},
+  {nome:"Gislayne Santos De Oliveira",tipo_contrato:"CLT",cargo_asis:"ASSISTENTE DE OPERAÇÕES",cargo_leveling:"L2",data_admissao:"2025-04-22",salario_base:2156.07,custo_total_reajuste:5616.31},
+  {nome:"Guilherme Cunha Yuki",tipo_contrato:"PJ",cargo_asis:"GERENTE DE DADOS",cargo_leveling:"M1",data_admissao:"2024-07-22",salario_base:22080.0,custo_total_reajuste:28849.34},
+  {nome:"Guilherme Evangelista da Silva",tipo_contrato:"CLT",cargo_asis:"ANALISTA DE PRODUTO JR",cargo_leveling:"T3",data_admissao:"2026-01-26",salario_base:5500.0,custo_total_reajuste:10530.65},
+  {nome:"Isabelle Soares Emilio",tipo_contrato:"CLT",cargo_asis:"ANALISTA DE PRODUTO JR",cargo_leveling:"L3",data_admissao:"2025-06-09",salario_base:7000.0,custo_total_reajuste:13793.06},
+  {nome:"Ithalo Calabrez",tipo_contrato:"CLT",cargo_asis:"ANALISTA JUNIOR",cargo_leveling:"L3",data_admissao:"2025-09-08",salario_base:3800.0,custo_total_reajuste:7913.67},
+  {nome:"Ivanildo Jose Da Silva",tipo_contrato:"CLT",cargo_asis:"ANALISTA DE QUALIDADE",cargo_leveling:"L2",data_admissao:"2022-03-10",salario_base:3400.81,custo_total_reajuste:8180.86},
+  {nome:"Janaina Ester De Aguiar",tipo_contrato:"PJ",cargo_asis:"ESPECIALISTA DE DEPARTAMENTO PESSOAL E BENEFÍCIOS",cargo_leveling:"L5",data_admissao:"2024-03-04",salario_base:10390.0,custo_total_reajuste:14892.29},
+  {nome:"Jessyca Goncalves Cordeiro",tipo_contrato:"CLT",cargo_asis:"SUPERVISOR DE OPERAÇÕES",cargo_leveling:"L4",data_admissao:"2023-09-18",salario_base:5720.0,custo_total_reajuste:11756.51},
+  {nome:"Joana Ungaretti Carrion",tipo_contrato:"PJ",cargo_asis:"HEAD LEGAL E PEOPLE",cargo_leveling:"M3",data_admissao:"2023-10-09",salario_base:35000.0,custo_total_reajuste:45896.7},
+  {nome:"Jose Rafaell De Souza Cunha",tipo_contrato:"CLT",cargo_asis:"ANALISTA DE DADOS PL",cargo_leveling:"L3",data_admissao:"2024-07-01",salario_base:8785.06,custo_total_reajuste:15121.06},
+  {nome:"Kioshi Iosimuta",tipo_contrato:"PJ",cargo_asis:"DESENVOLVEDOR SR",cargo_leveling:"T4",data_admissao:"2026-07-15",salario_base:23000.0,custo_total_reajuste:29953.67},
+  {nome:"Laiz Monteiro Zumba",tipo_contrato:"CLT",cargo_asis:"AGENTE DE ATENDIMENTO PL",cargo_leveling:"L3",data_admissao:"2022-02-14",salario_base:5000.0,custo_total_reajuste:9994.25},
+  {nome:"Laura Rocha De Souza",tipo_contrato:"CLT",cargo_asis:"ADVOGADA JR",cargo_leveling:"L1",data_admissao:"2026-07-01",salario_base:3800.0,custo_total_reajuste:7913.67},
+  {nome:"Leonardo Henrique Peixoto",tipo_contrato:"PJ",cargo_asis:"HEAD FINANCEIRO",cargo_leveling:"M3",data_admissao:"2026-08-24",salario_base:29000.0,custo_total_reajuste:37477.13},
+  {nome:"Luana Albuquerque Pistarini Lima",tipo_contrato:"CLT",cargo_asis:"COORDENADOR DE FINANÇAS",cargo_leveling:"L5",data_admissao:"2025-11-03",salario_base:11073.7,custo_total_reajuste:19523.84},
+  {nome:"Lucas Freitas Dos Santos Da Silva",tipo_contrato:"CLT",cargo_asis:"ASSISTENTE DE OPERAÇÕES",cargo_leveling:"L2",data_admissao:"2025-02-19",salario_base:3500.0,custo_total_reajuste:7685.15},
+  {nome:"Luciene Francisca De Souza",tipo_contrato:"CLT",cargo_asis:"AGENTE DE ATENDIMENTO JR",cargo_leveling:"L3",data_admissao:"2021-10-21",salario_base:3232.87,custo_total_reajuste:7273.94},
+  {nome:"Luiza De Almeida Campos",tipo_contrato:"CLT",cargo_asis:"FRONT END PLENO",cargo_leveling:"T3",data_admissao:"2024-05-13",salario_base:10078.64,custo_total_reajuste:17981.06},
+  {nome:"Marcello Fernandes Eugenio Pereira",tipo_contrato:"CLT",cargo_asis:"ANALISTA DE NEGÓCIOS",cargo_leveling:"L4",data_admissao:"2022-06-14",salario_base:6822.86,custo_total_reajuste:12567.06},
+  {nome:"Marcio Martinez De Oliveira",tipo_contrato:"CLT",cargo_asis:"ANALISTA DE OPERAÇÕES JR",cargo_leveling:"L2",data_admissao:"2023-11-21",salario_base:2405.05,custo_total_reajuste:6414.69},
+  {nome:"Mariana Lima Pinto",tipo_contrato:"CLT",cargo_asis:"ADVOGADA PLENO",cargo_leveling:"L4",data_admissao:"2022-06-20",salario_base:11767.77,custo_total_reajuste:20179.25},
+  {nome:"Mariana Thais Araujo Dos Santos",tipo_contrato:"CLT",cargo_asis:"SUPERVISOR DE OPERAÇÕES",cargo_leveling:"L4",data_admissao:"2025-05-05",salario_base:5646.85,custo_total_reajuste:11476.71},
+  {nome:"Marilene Maria Alves Valicelli",tipo_contrato:"PJ",cargo_asis:"HEAD DE TECNOLOGIA",cargo_leveling:"M3",data_admissao:"2023-05-15",salario_base:35000.0,custo_total_reajuste:45586.7},
+  {nome:"Martin Amaury Poutrel Junck",tipo_contrato:"PJ",cargo_asis:"CEO",cargo_leveling:"M4",data_admissao:"2021-11-01",salario_base:3200.0,custo_total_reajuste:98018.89},
+  {nome:"Millena Tomas da Silva",tipo_contrato:"CLT",cargo_asis:"ANALISTA AMBIENTAL",cargo_leveling:"L3",data_admissao:"2026-02-19",salario_base:3500.0,custo_total_reajuste:7685.15},
+  {nome:"Murilo Lourenco",tipo_contrato:"PJ",cargo_asis:"GERENTE DE NOVOS NEGÓCIOS",cargo_leveling:"M1",data_admissao:"2026-06-09",salario_base:24000.0,custo_total_reajuste:31868.08},
+  {nome:"Otavio Augusto Primo",tipo_contrato:"CLT",cargo_asis:"DESENVOLVEDOR DE TECNOLOGIA SÊNIOR",cargo_leveling:"T4",data_admissao:"2023-05-02",salario_base:17339.86,custo_total_reajuste:28995.72},
+  {nome:"Priscila de Lima Thomaz Pessutto",tipo_contrato:"CLT",cargo_asis:"ANALISTA DE BACKOFFICE",cargo_leveling:"L3",data_admissao:"2026-01-26",salario_base:3500.0,custo_total_reajuste:7685.15},
+  {nome:"Renato Ramos Da Silva",tipo_contrato:"PJ",cargo_asis:"SR BACKEND ENGINEER",cargo_leveling:"T4",data_admissao:"2024-06-03",salario_base:18702.0,custo_total_reajuste:26153.67},
+  {nome:"Shinneider Libanio Da Silva",tipo_contrato:"PJ",cargo_asis:"ESPECIALISTA DESENVOLVEDOR",cargo_leveling:"T5",data_admissao:"2023-01-02",salario_base:28053.0,custo_total_reajuste:35983.49},
+  {nome:"Simmon Ki Shik Nam",tipo_contrato:"PJ",cargo_asis:"CPO",cargo_leveling:"M4",data_admissao:"2024-01-15",salario_base:70000.0,custo_total_reajuste:90174.1},
+  {nome:"Tainara Alves Sambinelli",tipo_contrato:"CLT",cargo_asis:"ENGENHEIRA AMBIENTAL",cargo_leveling:"L4",data_admissao:"2025-09-01",salario_base:10000.0,custo_total_reajuste:17711.34},
+  {nome:"Tatiane Arissa Tuha",tipo_contrato:"CLT",cargo_asis:"ANALISTA DE TRANSPORTES SR",cargo_leveling:"L4",data_admissao:"2022-01-27",salario_base:10590.99,custo_total_reajuste:18367.72},
+  {nome:"Vinicius Shkromada De Oliveira",tipo_contrato:"PJ",cargo_asis:"ANALISTA DE DADOS PLENO",cargo_leveling:"L4",data_admissao:"2025-08-27",salario_base:10350.0,custo_total_reajuste:14659.3},
+  {nome:"Vitoria Alves De Araujo Dimas",tipo_contrato:"PJ",cargo_asis:"ANALISTA DE NEGÓCIO",cargo_leveling:"L4",data_admissao:"2024-03-07",salario_base:14500.0,custo_total_reajuste:19382.75},
+];
+
+// ── ESOP GRANTS ─────────────────────────────────────────────────────────────
+const GRANTS = [
+  {name:"Alex Rappaport",active:75000,strike:1.2332,vesting:"23/10/2020",cliff:"23/10/2021"},
+  {name:"Alex Rappaport",active:25000,strike:1.44,vesting:"01/08/2023",cliff:"01/08/2024"},
+  {name:"Alex Rappaport",active:1397,strike:1.44,vesting:"31/03/2025",cliff:"31/03/2026"},
+  {name:"Anderson Ferreira",active:70000,strike:1.44,vesting:"01/08/2025",cliff:"01/08/2026"},
+  {name:"Anderson Ferreira",active:89000,strike:1.44,vesting:"01/10/2025",cliff:"01/10/2026"},
+  {name:"Andrey",active:50000,strike:1.44,vesting:"03/11/2025",cliff:"03/11/2026"},
+  {name:"Arthur Mattar",active:16000,strike:1.44,vesting:"01/10/2025",cliff:"01/10/2026"},
+  {name:"Carlos Alexandre Pereira de Lima",active:8000,strike:1.44,vesting:"01/02/2023",cliff:"01/02/2024"},
+  {name:"Carlos Alexandre Pereira de Lima",active:8000,strike:1.44,vesting:"01/10/2025",cliff:"01/10/2026"},
+  {name:"Cássio Rafael Oliveira Silva",active:10190,strike:1.2332,vesting:"13/09/2021",cliff:"13/09/2022"},
+  {name:"Cássio Rafael Oliveira Silva",active:12000,strike:1.44,vesting:"01/02/2023",cliff:"01/02/2024"},
+  {name:"Cássio Rafael Oliveira Silva",active:115000,strike:1.44,vesting:"01/08/2023",cliff:"01/08/2024"},
+  {name:"Cássio Rafael Oliveira Silva",active:254059,strike:1.44,vesting:"01/10/2025",cliff:"01/10/2026"},
+  {name:"Daniela Mendes Cavalcanti",active:951,strike:1.44,vesting:"31/03/2025",cliff:"31/03/2026"},
+  {name:"Edigar Reis",active:18000,strike:1.44,vesting:"01/10/2025",cliff:"01/10/2026"},
+  {name:"Erika Yamada Isobata",active:571,strike:1.44,vesting:"31/03/2025",cliff:"31/03/2026"},
+  {name:"Erika Yamada Isobata",active:10000,strike:1.44,vesting:"25/06/2025",cliff:"25/06/2026"},
+  {name:"Flavia Satomi Miura",active:8000,strike:1.44,vesting:"01/08/2023",cliff:"01/08/2024"},
+  {name:"Flavia Satomi Miura",active:2905,strike:1.44,vesting:"31/03/2025",cliff:"31/03/2026"},
+  {name:"Flavia Miura",active:10000,strike:1.44,vesting:"18/04/2024",cliff:"18/04/2025"},
+  {name:"Gabriel Ponczyk",active:2000,strike:1.44,vesting:"01/03/2023",cliff:"01/03/2024"},
+  {name:"Gabriel Ponczyk",active:7000,strike:1.44,vesting:"22/10/2024",cliff:"22/10/2025"},
+  {name:"Gabriel Ponczyk",active:1453,strike:1.44,vesting:"31/03/2025",cliff:"31/03/2026"},
+  {name:"Gabriel Ponczyk",active:10000,strike:1.44,vesting:"08/05/2025",cliff:"08/05/2026"},
+  {name:"Guilherme Cunha Yuki",active:35000,strike:1.44,vesting:"22/07/2024",cliff:"22/07/2025"},
+  {name:"Guilherme Cunha Yuki",active:581,strike:1.44,vesting:"31/03/2025",cliff:"31/03/2026"},
+  {name:"Joana Carrion",active:15000,strike:1.44,vesting:"09/10/2023",cliff:"09/10/2024"},
+  {name:"Joana Carrion",active:30000,strike:1.44,vesting:"05/02/2025",cliff:"05/02/2026"},
+  {name:"Joana Carrion",active:3922,strike:1.44,vesting:"31/03/2025",cliff:"31/03/2026"},
+  {name:"Joana Carrion",active:108000,strike:1.44,vesting:"01/10/2025",cliff:"01/10/2026"},
+  {name:"Marcello Fernandes",active:8000,strike:1.44,vesting:"01/10/2025",cliff:"01/10/2026"},
+  {name:"Mariana Lima",active:7000,strike:1.44,vesting:"01/08/2025",cliff:"01/08/2026"},
+  {name:"Marilene Maria Alves Valicelli",active:35000,strike:1.44,vesting:"15/05/2023",cliff:"15/05/2024"},
+  {name:"Marilene Maria Alves Valicelli",active:120000,strike:1.44,vesting:"01/08/2023",cliff:"01/08/2024"},
+  {name:"Shinneider Libanio",active:10000,strike:1.44,vesting:"27/08/2024",cliff:"27/08/2025"},
+  {name:"Shinneider Libanio",active:35000,strike:1.44,vesting:"01/10/2025",cliff:"01/10/2026"},
+  {name:"Vitoria Alves de Araujo Dimas",active:7000,strike:1.44,vesting:"21/10/2024",cliff:"21/10/2025"},
+  {name:"Vitoria Alves de Araujo Dimas",active:1331,strike:1.44,vesting:"31/03/2025",cliff:"31/03/2026"},
+  // New grants — 2026
+  {name:"Isabelle Soares Emilio",active:15000,strike:1.44,vesting:"31/08/2026",cliff:"31/08/2027"},
+  {name:"Otavio Augusto Primo",active:20000,strike:1.44,vesting:"31/08/2026",cliff:"31/08/2027"},
+  {name:"Vinicius Shkromada De Oliveira",active:15000,strike:1.44,vesting:"31/08/2026",cliff:"31/08/2027"},
+  {name:"Carlos Henrique Alves Dos Santos",active:20000,strike:1.44,vesting:"31/08/2026",cliff:"31/08/2027"},
+  {name:"Arthur Mattar De Carvalho Teixeira",active:10000,strike:1.44,vesting:"31/08/2026",cliff:"31/08/2027"},
+  {name:"Erika Yamada Isobata",active:10000,strike:1.44,vesting:"31/08/2026",cliff:"31/08/2027"},
+  {name:"Leonardo Peixoto",active:50000,strike:1.44,vesting:"24/08/2026",cliff:"24/08/2027"},
+  {name:"Murilo Lourenco",active:35000,strike:1.44,vesting:"09/06/2026",cliff:"09/06/2027"},
+];
+
+// ── PERFORMANCE — Avaliação de Desempenho 2º Semestre 2025 ──────────────────
+const PERF_RESULTS = [{"nome": "Alex Rappaport", "nota": "3.0", "zona": "Dentro do esperado"}, {"nome": "Amanda De Maia Areias", "nota": "2.4", "zona": "Crítico"}, {"nome": "Anderson Da Silva Ferreira", "nota": "2.5", "zona": "Crítico"}, {"nome": "Anderson Yuji Taniguchi", "nota": "3.1", "zona": "Dentro do esperado"}, {"nome": "Andrey Hwa Zorat Yu", "nota": "1.9", "zona": "Crítico"}, {"nome": "Apolo Favaro", "nota": "2.2", "zona": "Crítico"}, {"nome": "Arthur Mattar De Carvalho Teixeira", "nota": "3.2", "zona": "Dentro do esperado"}, {"nome": "Artur Albertini Leal", "nota": "2.0", "zona": "Crítico"}, {"nome": "Avila Ramony Ferreira Da Silva", "nota": "3.4", "zona": "Dentro do esperado"}, {"nome": "Carlos Alexandre Pereira De Lima", "nota": "3.7", "zona": "Dentro do esperado"}, {"nome": "Carlos Henrique Alves Dos Santos", "nota": "2.4", "zona": "Crítico"}, {"nome": "Cassio Rafael Oliveira Silva", "nota": "3.3", "zona": "Dentro do esperado"}, {"nome": "Cinthia Gabriela Da Silva Vitorino", "nota": "3.4", "zona": "Dentro do esperado"}, {"nome": "Daiana Maria De Almeida", "nota": "2.0", "zona": "Crítico"}, {"nome": "Daniela Mendes Cavalcanti", "nota": "2.6", "zona": "Crítico"}, {"nome": "Daniel Fillol", "nota": "3.6", "zona": "Dentro do esperado"}, {"nome": "Danielle Bispo Da Silva", "nota": "3.8", "zona": "Dentro do esperado"}, {"nome": "Debora Eduarda De Lima Pires", "nota": "3.4", "zona": "Dentro do esperado"}, {"nome": "Denis Cruz Gonçalves", "nota": "2.2", "zona": "Crítico"}, {"nome": "Edigar Reis Barbosa", "nota": "2.9", "zona": "Crítico"}, {"nome": "Ellen Alexsandra Da Silva Carvalho", "nota": "2.8", "zona": "Crítico"}, {"nome": "Erika Yamada Isobata", "nota": "3.0", "zona": "Dentro do esperado"}, {"nome": "Ewerton De Lira Lopes", "nota": "3.2", "zona": "Dentro do esperado"}, {"nome": "Felipe Pereira Barreiros", "nota": "3.0", "zona": "Dentro do esperado"}, {"nome": "Flavia Satomi Miura", "nota": "3.5", "zona": "Dentro do esperado"}, {"nome": "Franklin Oliveira Da Silva", "nota": "2.8", "zona": "Crítico"}, {"nome": "Gabriel Ponczyk", "nota": "2.4", "zona": "Crítico"}, {"nome": "Gilberto Gil Santos Souza", "nota": "2.2", "zona": "Crítico"}, {"nome": "Gislayne Santos De Oliveira", "nota": "1.8", "zona": "Crítico"}, {"nome": "Guilherme Cunha Yuki", "nota": "3.3", "zona": "Dentro do esperado"}, {"nome": "Guilherme Soares Pithon Cyrino", "nota": "3.6", "zona": "Dentro do esperado"}, {"nome": "Isabelle Soares Emilio", "nota": "3.4", "zona": "Dentro do esperado"}, {"nome": "Ithalo Calabrez", "nota": "3.4", "zona": "Dentro do esperado"}, {"nome": "Ivanildo Jose Da Silva", "nota": "3.6", "zona": "Dentro do esperado"}, {"nome": "Janaina Ester De Aguiar", "nota": "", "zona": ""}, {"nome": "Jessyca Goncalves Cordeiro", "nota": "3.2", "zona": "Dentro do esperado"}, {"nome": "Joana Ungaretti Carrion", "nota": "3.5", "zona": "Dentro do esperado"}, {"nome": "Joao Gilberto Trevizani", "nota": "3.2", "zona": "Dentro do esperado"}, {"nome": "Jose Rafaell De Souza Cunha", "nota": "3.6", "zona": "Dentro do esperado"}, {"nome": "Julia Alexsandra Rodrigues Gomes", "nota": "2.8", "zona": "Crítico"}, {"nome": "Katia Goncalves Da Rosa", "nota": "1.9", "zona": "Crítico"}, {"nome": "Laiz Monteiro Zumba", "nota": "3.6", "zona": "Dentro do esperado"}, {"nome": "Lani Cavalcanti", "nota": "3.6", "zona": "Dentro do esperado"}, {"nome": "Laura Rocha De Souza", "nota": "3.4", "zona": "Dentro do esperado"}, {"nome": "Luana Albuquerque Pistarini Lima", "nota": "3.3", "zona": "Dentro do esperado"}, {"nome": "Lucas Freitas Dos Santos Da Silva", "nota": "3.2", "zona": "Dentro do esperado"}, {"nome": "Luciene Francisca De Souza", "nota": "3.6", "zona": "Dentro do esperado"}, {"nome": "Luiza De Almeida Campos", "nota": "3.0", "zona": "Dentro do esperado"}, {"nome": "Marcello Fernandes Eugenio Pereira", "nota": "4.0", "zona": "Acima do esperado"}, {"nome": "Marcelo De Almeida Gomes", "nota": "2.6", "zona": "Crítico"}, {"nome": "Marcio Martinez De Oliveira", "nota": "3.2", "zona": "Dentro do esperado"}, {"nome": "Marcos Rafael Marcondes Ribas", "nota": "2.2", "zona": "Crítico"}, {"nome": "Mariana Beatriz Fernandes Ferreira", "nota": "3.0", "zona": "Dentro do esperado"}, {"nome": "Mariana Lima Pinto", "nota": "3.3", "zona": "Dentro do esperado"}, {"nome": "Mariana Thais Araujo Dos Santos", "nota": "3.4", "zona": "Dentro do esperado"}, {"nome": "Marilene Maria Alves Valicelli", "nota": "3.0", "zona": "Dentro do esperado"}, {"nome": "Martin Amaury Poutrel Junck", "nota": "3.0", "zona": "Dentro do esperado"}, {"nome": "Monica Cristina Silva Cordeiro", "nota": "3.1", "zona": "Dentro do esperado"}, {"nome": "Otavio Augusto Primo", "nota": "2.6", "zona": "Crítico"}, {"nome": "Renato Batista Cordeiro Viana", "nota": "2.7", "zona": "Crítico"}, {"nome": "Renato Ramos Da Silva", "nota": "2.4", "zona": "Crítico"}, {"nome": "Ricardo De Stefano Porciuncula", "nota": "3.0", "zona": "Dentro do esperado"}, {"nome": "Shinneider Libanio Da Silva", "nota": "3.2", "zona": "Dentro do esperado"}, {"nome": "Simmon Ki Shik Nam", "nota": "3.1", "zona": "Dentro do esperado"}, {"nome": "Tainara Alves Sambinelli", "nota": "4.0", "zona": "Acima do esperado"}, {"nome": "Tatiane Arissa Tuha", "nota": "3.6", "zona": "Dentro do esperado"}, {"nome": "Vinicius Shkromada De Oliveira", "nota": "4.0", "zona": "Acima do esperado"}, {"nome": "Vitoria Alves De Araujo Dimas", "nota": "3.6", "zona": "Dentro do esperado"}, {"nome": "Willian De Souza Costa", "nota": "2.6", "zona": "Crítico"}];
+function getPerf(displayName) {
+  const dn = norm(displayName);
+  // exact full-name match
+  let f = PERF_RESULTS.find(p => norm(p.nome) === dn);
+  if (f) return f;
+  // word-set match: require ALL significant words of the shorter name to match EXACTLY (not substring) words in the other name
+  const dWords = dn.split(' ').filter(w => w.length > 2);
+  let best = null, bestScore = 0;
+  PERF_RESULTS.forEach(p => {
+    const pWords = norm(p.nome).split(' ').filter(w => w.length > 2);
+    // exact word matches only
+    const matched = dWords.filter(w => pWords.includes(w));
+    const minLen = Math.min(dWords.length, pWords.length);
+    // require at least 2 exact word matches AND those matches cover most of the shorter name
+    if (matched.length >= 2 && matched.length >= minLen - 1) {
+      if (matched.length > bestScore) { bestScore = matched.length; best = p; }
+    }
+  });
+  return best;
+}
+function perfZoneClass(zona) {
+  if (!zona) return 'perf-none';
+  const z = zona.toLowerCase();
+  if (z.includes('crítico') || z.includes('critico')) return 'perf-critico';
+  if (z.includes('acima')) return 'perf-acima';
+  if (z.includes('dentro')) return 'perf-dentro';
+  return 'perf-none';
+}
+
+// ── HELPERS ─────────────────────────────────────────────────────────────────
+const norm = s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').trim();
+function findEmp(displayName){
+  const dn=norm(displayName);
+  let f=EMP.find(e=>norm(e.nome)===dn);
+  if(f)return f;
+  f=EMP.find(e=>norm(e.nome).includes(dn)||dn.includes(norm(e.nome)));
+  if(f)return f;
+  const words=dn.split(' ').filter(w=>w.length>2);
+  return EMP.find(e=>{
+    const en=norm(e.nome).split(' ');
+    return words.filter(w=>en.some(ew=>ew.includes(w)||w.includes(ew))).length>=Math.min(2,words.length);
+  })||null;
+}
+function getGrants(displayName){
+  const dn=norm(displayName);
+  const words=dn.split(' ').filter(w=>w.length>2);
+  return GRANTS.filter(g=>{
+    const gn=norm(g.name); const gnw=gn.split(' ').filter(w=>w.length>2);
+    return words.filter(w=>gnw.some(gw=>gw.includes(w)||w.includes(gw))).length>=Math.min(2,words.length);
+  });
+}
+function calcVested(g){
+  if(!g.active)return 0;
+  const[d,m,y]=g.vesting.split('/');
+  const start=new Date(+y,+m-1,+d);
+  const months=Math.floor((new Date()-start)/(30.44*24*3600*1000));
+  if(months<12)return 0;
+  return Math.floor(g.active*Math.min(months,48)/48);
+}
+function tenure(d){
+  if(!d)return null;
+  const s=new Date(d),n=new Date();
+  const mo=(n.getFullYear()-s.getFullYear())*12+n.getMonth()-s.getMonth();
+  if(mo<0)return null;
+  const y=Math.floor(mo/12),r=mo%12;
+  return y===0?`${r}m`:(r===0?`${y}a`:`${y}a ${r}m`);
+}
+function tenureM(d){if(!d)return 0;const s=new Date(d),n=new Date();return Math.max(0,(n.getFullYear()-s.getFullYear())*12+n.getMonth()-s.getMonth());}
+const brl=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN=n=>n?n.toLocaleString('pt-BR'):'0';
+const mKey=n=>'merit_'+norm(n).replace(/ /g,'_');
+const loadM=n=>{try{return JSON.parse(localStorage.getItem(mKey(n))||'null');}catch{return null;}};
+const saveM=(n,d,t)=>localStorage.setItem(mKey(n),JSON.stringify({date:d,note:t}));
+const projKey=n=>'projeto_q22026_'+norm(n).replace(/ /g,'_');
+const loadProj=n=>localStorage.getItem(projKey(n))||'';
+const saveProj=(n,txt)=>localStorage.setItem(projKey(n),txt);
+const clearProj=n=>localStorage.removeItem(projKey(n));
+const fmtDate=s=>{if(!s)return '';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;};
+
+// ── STATUS STORAGE ────────────────────────────────────────────────────────────
+const STATUS_LABELS = {none:'',chave:'Pessoa Chave',licenca:'Licença / Afastamento',atencao:'Atenção'};
+const STATUS_CLASS  = {none:'status-none',chave:'status-chave',licenca:'status-licenca',atencao:'status-atencao'};
+const STATUS_OPT_CLASS = {none:'opt-none',chave:'opt-chave',licenca:'opt-licenca',atencao:'opt-atencao'};
+function statusKey(name){return 'status_'+norm(name).replace(/ /g,'_');}
+function loadStatus(name){return localStorage.getItem(statusKey(name))||'none';}
+function saveStatus(name,val){localStorage.setItem(statusKey(name),val);}
+
+// ── NODE FACTORY ──────────────────────────────────────────────────────────────
+function mkNode(name,role,extra=''){
+  const emp=findEmp(name);
+  const grants=getGrants(name);
+  const div=document.createElement('div');
+  div.className='node'+(emp?' has-data':'')+(extra?' '+extra:'');
+  div.dataset.name=name;
+  const tipo=emp?emp.tipo_contrato:'';
+  const bc=tipo==='CLT'?'b-clt':(tipo==='Estagiário'||tipo==='Aprendiz'?'b-est':'b-pj');
+  div.innerHTML=
+    `<div class="n-name">${name}</div><div class="n-role">${role}</div>`+
+    (tipo?`<span class="n-badge ${bc}">${tipo}</span>`:'');
+
+  div.addEventListener('click',()=>openModal(name,role,emp,grants));
+  return div;
+}
+// layout helpers
+function vline(){const d=document.createElement('div');d.className='v-line';return d;}
+function hrow(...items){const d=document.createElement('div');d.className='h-row';items.forEach(i=>d.appendChild(i));return d;}
+function col(...items){const d=document.createElement('div');d.className='col';items.forEach(i=>d.appendChild(i));return d;}
+function team(...items){const d=document.createElement('div');d.className='team-wrap';items.forEach(i=>d.appendChild(i));return d;}
+function lbl(txt){const d=document.createElement('div');d.className='sec-lbl';d.textContent=txt;return d;}
+function branchOf(headNode,...children){
+  const d=document.createElement('div');d.className='branch-container';
+  d.appendChild(headNode);d.appendChild(vline());
+  children.forEach(c=>d.appendChild(c));
+  return d;
+}
+
+// ── ORG STRUCTURE ─────────────────────────────────────────────────────────────
+// Layout: fully horizontal
+// Row 1 (top): [Anderson T side] ── Martin (center) ── [Simmon side]
+// Connectors drop down from each L2 head to their teams below
+//
+// LEFT SIDE (Anderson T):
+//   Finance col: Andrey → Luana+Vitória → Daniela+Ithalo (two vertical sub-chains)
+//   SalesOps: Cássio + Anderson F side by side, teams below each
+//
+// CENTER: Joana + Marketing
+//
+// RIGHT SIDE (Simmon):
+//   Marilene → Eng team
+//   Data & AI col
+//   Product col
+//   AI Deploy col
+//   Murilo (Novos Negócios) — vertical at far right
+
+function renderOrg(){
+  const root=document.getElementById('org-root');
+  root.innerHTML='';
+  root.style.cssText='display:flex;flex-direction:row;align-items:flex-start;justify-content:center;gap:0;min-width:max-content;padding:20px 0;';
+
+  // ── helper: vertical chain (each item below the previous) ──
+  function vchain(...nodes){
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;flex-direction:column;align-items:center;gap:0;';
+    nodes.forEach((n,i)=>{
+      d.appendChild(n);
+      if(i<nodes.length-1)d.appendChild(vline());
+    });
+    return d;
+  }
+  // side-by-side with top alignment
+  function side(...items){
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;flex-direction:row;align-items:flex-start;justify-content:center;gap:10px;';
+    items.forEach(i=>d.appendChild(i));
+    return d;
+  }
+  // vertical section: label + stacked nodes
+  function vsec(label,...nodes){
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;flex-direction:column;align-items:center;gap:7px;';
+    if(label) d.appendChild(lbl(label));
+    nodes.forEach(n=>d.appendChild(n));
+    return d;
+  }
+  // team column: same as vsec but marked for alignment
+  function teamcol(label,...nodes){
+    const d=vsec(label,...nodes);
+    d.setAttribute('data-teamcol','1');
+    return d;
+  }
+  // branch: head node → vline → content below
+  function br(headNode,content){
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;flex-direction:column;align-items:center;';
+    d.appendChild(headNode);d.appendChild(vline());d.appendChild(content);
+    return d;
+  }
+  // thin vertical connector used between parent and child area
+  function vpad(px=20){const d=document.createElement('div');d.style.cssText=`width:2px;height:${px}px;background:var(--border);`;return d;}
+  // horizontal connector bar spanning children
+  function hbar(){const d=document.createElement('div');d.style.cssText='height:2px;background:var(--border);align-self:stretch;margin:0 74px;';return d;}
+
+  // ════════════════════════════════════════════════════════════════
+  // MARTIN — centre anchor
+  // ════════════════════════════════════════════════════════════════
+  const martin=mkNode('Martin Junck','CEO & Co-founder','ceo');
+
+  // ════════════════════════════════════════════════════════════════
+  // LEFT SIDE — Anderson Taniguchi
+  // ════════════════════════════════════════════════════════════════
+  const andersonT=mkNode('Anderson Taniguchi','COO & Co-founder','coo');
+
+  // ── Finance ──
+  // Andrey head, then two parallel sub-chains side by side:
+  //   chain A: Luana → Daniela
+  //   chain B: Vitória → Ithalo
+  const chainA=vchain(
+    mkNode('Luana Albuquerque Pistarini Lima','Coord. Finanças'),
+    mkNode('Daniela Caroline da Silva','Analista Financeiro'),
+  ); chainA.setAttribute('data-teamcol','1');
+  const chainB=vchain(
+    mkNode('Vitoria Alves De Araujo Dimas','Pricing'),
+    mkNode('Ithalo Calabrez','Analista Pleno'),
+  ); chainB.setAttribute('data-teamcol','1');
+  const financeSubcols=side(chainA,chainB);
+  const andreyBranch=br(mkNode('Leonardo Henrique Peixoto','Head Financeiro','head'),financeSubcols);
+  const financeSection=vsec('Finance',andreyBranch);
+
+  // ── SalesOps — Cássio + Anderson F side by side ──
+  // Cássio team — exact column order as specified
+  const cassioTeam=side(
+    teamcol('',
+      mkNode('Carlos Alexandre Pereira De Lima','Coord Ops · SMB'),
+      mkNode('Debora Eduarda De Lima Pires','Supply Mapping'),
+      mkNode('Ewerton De Lira Lopes','Supply Mapping'),
+      mkNode('Lucas Freitas Dos Santos Da Silva','Analista de Ops'),
+    ),
+    teamcol('',
+      mkNode('Jessyca Goncalves Cordeiro','Supervisor VT'),
+      mkNode('Danielle Bispo Da Silva','VT / Implementação'),
+      mkNode('Gislayne Santos De Oliveira','Assistente Liveops'),
+      mkNode('Marcio Martinez De Oliveira','VT / Implementação'),
+    ),
+    teamcol('',
+      mkNode('Mariana Thais Araujo Dos Santos','Supervisor Liveops'),
+      
+      mkNode('Ivanildo Jose Da Silva','VT / Implementação'),
+    ),
+  );
+
+  // Anderson F team
+  const andFTeam=teamcol('',
+    mkNode('Gabriel Ponczyk','Sales RCC'),
+    mkNode('Priscila de Lima Thomaz Pessutto','Assistente de Vendas'),
+  );
+
+
+  // ════════════════════════════════════════════════════════════════
+  // CENTRE — Joana + Marketing
+  // ════════════════════════════════════════════════════════════════
+  const joana=mkNode('Joana Ungaretti Carrion','Head Legal, Compliance, People & CS','head');
+
+  const joanaTeams=side(
+    teamcol('People',
+      mkNode('Daniela Mendes Cavalcanti','People · HRBP'),
+      mkNode('Janaina Ester De Aguiar','DP · Folha'),
+    ),
+    teamcol('Legal',
+      mkNode('Mariana Lima Pinto','Jurídico'),
+      mkNode('Laura Rocha De Souza','Jurídico · Estag.'),
+    ),
+    teamcol('Compliance',
+      mkNode('Tainara Alves Sambinelli','ESG · Compliance'),
+      mkNode('Avila Ramony Ferreira Da Silva','Compliance'),
+      mkNode('Millena Tomas da Silva','Compliance'),
+    ),
+    teamcol('CS & Experiência',
+      mkNode('Edigar Reis Barbosa','CS & Experiência'),
+      mkNode('Laiz Monteiro Zumba','Agente Atendimento'),
+      mkNode('Luciene Francisca De Souza','Key Account'),
+      mkNode('Marcello Fernandes Eugenio Pereira','Analista de Negócios'),
+    ),
+  );
+
+  const mktSection=teamcol('Marketing',
+    mkNode('Alex Rappaport','Gerente de Marketing'),
+  );
+
+
+
+  // ════════════════════════════════════════════════════════════════
+  // RIGHT SIDE — Simmon
+  // ════════════════════════════════════════════════════════════════
+  const simmon=mkNode('Simmon Nam','CPO & Co-founder','coo');
+
+  // Engineering (Marilene)
+  const engTeam=teamcol('Engineering',
+    mkNode('Shinneider Libanio Da Silva','Tech Lead'),
+    mkNode('Felipe Pereira Barreiros','Tech Lead'),
+    mkNode('Diego Rodrigues Marques','Dev Full Stack SR'),
+    mkNode('Kioshi Iosimuta','Dev SR'),
+    mkNode('Otavio Augusto Primo','Dev Front End'),
+    mkNode('Luiza De Almeida Campos','Dev Front End'),
+    mkNode('Renato Ramos Da Silva','Dev Back End'),
+    
+    mkNode('Artur Albertini Leal','Jovem Aprendiz'),
+  );
+
+  // Data & AI
+  const dataSection=teamcol('Data & AI',
+    mkNode('Guilherme Cunha Yuki','Data & AI'),
+    mkNode('Vinicius Shkromada De Oliveira','Dados'),
+    mkNode('Guilherme Evangelista da Silva','Dados · Product'),
+  );
+
+  // Product
+  const prodSection=teamcol('Product',
+    mkNode('Carlos Henrique Alves Dos Santos','Product Manager'),
+    mkNode('Erika Yamada Isobata','Product Design Lead'),
+    mkNode('Isabelle Soares Emilio','Analista de Produto'),
+  );
+
+  // AI Deploy
+  const aiSection=teamcol('AI Deploy',
+    mkNode('Flavia Satomi Miura','Intel. Logística'),
+    mkNode('Arthur Mattar De Carvalho Teixeira','Processos OPS'),
+    mkNode('Tatiane Arissa Tuha','Dados OPS'),
+    mkNode('Jose Rafaell De Souza Cunha','Dados OPS'),
+  );
+
+  // Novos Negócios — vertical chain at far right
+  const novosSection=teamcol('Novos Negócios',
+    mkNode('Murilo Lourenco','Gerente de Novos Negócios'),
+  );
+
+
+  // ════════════════════════════════════════════════════════════════
+  // ASSEMBLE — horizontal layout: [Anderson T block] [Martin+centre] [Simmon block]
+  // ════════════════════════════════════════════════════════════════
+
+  // ── Restore previous structure ──
+  // Branches: each C-level has their heads below them, heads connect to teams
+  const cassioBranch = br(mkNode('Cassio Rafael Oliveira Silva','Head de Operações','head'), cassioTeam);
+  const andFBranch = br(mkNode('Anderson Da Silva Ferreira','Head Sales','head'), andFTeam);
+  const salesOpsSection = vsec('Sales & Ops', side(cassioBranch, andFBranch));
+  const andersonTContent = side(financeSection, salesOpsSection);
+  const andersonTBlock = br(andersonT, andersonTContent);
+
+  const joanaBranch = br(joana, joanaTeams);
+  const mktAligned = document.createElement('div');
+  mktAligned.style.cssText = 'display:flex;flex-direction:column;align-items:center;padding-top:52px;';
+  mktAligned.appendChild(mktSection);
+  const centreBlock = document.createElement('div');
+  centreBlock.style.cssText = 'display:flex;flex-direction:row;align-items:flex-start;gap:10px;';
+  centreBlock.appendChild(joanaBranch);
+  centreBlock.appendChild(mktAligned);
+
+  const marileneBranch = br(mkNode('Marilene Maria Alves Valicelli','Head de Engenharia','head'), engTeam);
+  const simmonContent = side(marileneBranch, dataSection, prodSection, aiSection, novosSection);
+  const simmonBlock = br(simmon, simmonContent);
+
+  // Martin + centre in a vertical column
+  const martinCol = document.createElement('div');
+  martinCol.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:0;';
+  martinCol.appendChild(martin);
+  martinCol.appendChild(vline());
+  martinCol.appendChild(centreBlock);
+
+  // outer horizontal row: andersonT | martin+centre | simmon
+  const outerRow = document.createElement('div');
+  outerRow.style.cssText = 'display:flex;flex-direction:row;align-items:flex-start;justify-content:center;gap:24px;';
+  outerRow.appendChild(andersonTBlock);
+  outerRow.appendChild(martinCol);
+  outerRow.appendChild(simmonBlock);
+
+  root.style.cssText = 'display:flex;flex-direction:row;align-items:flex-start;justify-content:center;gap:0;min-width:max-content;padding:20px 0;';
+  root.appendChild(outerRow);
+
+  // ── Two-pass alignment after render ──
+  requestAnimationFrame(() => {
+    // Pass 1: align 5 head cards (.node.head) to same top
+    const headCards = Array.from(document.querySelectorAll('.node.head'));
+    let maxH = 0;
+    headCards.forEach(c => { const t=c.getBoundingClientRect().top; if(t>maxH) maxH=t; });
+    headCards.forEach(c => {
+      const diff = maxH - c.getBoundingClientRect().top;
+      if(diff > 0){ const p=c.parentElement; p.style.paddingTop=(parseInt(p.style.paddingTop||'0')+diff)+'px'; }
+    });
+
+    // Pass 2: align first .node inside each [data-teamcol] to same top
+    requestAnimationFrame(() => {
+      const teamCols = Array.from(document.querySelectorAll('[data-teamcol]'));
+      const firstNodes = teamCols.map(col => col.querySelector('.node')).filter(Boolean);
+      let maxT = 0;
+      firstNodes.forEach(n => { const t=n.getBoundingClientRect().top; if(t>maxT) maxT=t; });
+      firstNodes.forEach(n => {
+        const diff = maxT - n.getBoundingClientRect().top;
+        if(diff > 1){
+          const col = n.closest('[data-teamcol]');
+          col.style.paddingTop = (parseInt(col.style.paddingTop||'0')+diff)+'px';
+        }
+      });
+    });
+  });
+
+  document.getElementById('hc-meta').textContent=EMP.length+' colaboradores ativos';
+}
+
+// ── MODAL ────────────────────────────────────────────────────────────────────
+let curName='';
+function openModal(name,role,emp,grants){
+  const perf=getPerf(name);
+  curName=emp?emp.nome:name;
+  document.getElementById('m-name').textContent=name;
+  document.getElementById('m-role').textContent=role;
+  if(emp){
+    document.getElementById('m-asis').textContent=emp.cargo_asis||'—';
+    document.getElementById('m-level').textContent=emp.cargo_leveling||'—';
+    document.getElementById('m-tipo').textContent=emp.tipo_contrato||'—';
+    document.getElementById('m-tenure').textContent=tenure(emp.data_admissao)||'—';
+    document.getElementById('m-tbar').style.width=Math.min(100,(tenureM(emp.data_admissao)/60)*100)+'%';
+    document.getElementById('m-sal').textContent=brl(emp.salario_base);
+    document.getElementById('m-custo').textContent=brl(emp.custo_total_reajuste);
+  } else {
+    ['m-asis','m-level','m-tipo','m-tenure','m-sal','m-custo'].forEach(id=>document.getElementById(id).textContent='—');
+    document.getElementById('m-tbar').style.width='0%';
+  }
+  const ec=document.getElementById('m-esop');
+  if(!grants||!grants.length){ec.innerHTML='<div class="esop-none">Nenhuma outorga ativa.</div>';}
+  else{
+    const tot=grants.reduce((s,g)=>s+g.active,0);
+    const vest=grants.reduce((s,g)=>s+calcVested(g),0);
+    const pct=tot>0?Math.round(vest/tot*100):0;
+    ec.innerHTML=`<div class="esop-wrap"><div class="esop-ttl">${fmtN(tot)} opções</div>
+    <div class="esop-sub">${fmtN(vest)} vestidas hoje · ${pct}% do total</div>
+    <div class="esop-grants">${grants.map(g=>{
+      const v=calcVested(g),p=g.active>0?Math.min(100,Math.round(v/g.active*100)):0;
+      return`<div class="egrant"><div class="egrant-top"><span class="egrant-round">Strike $${g.strike}</span><span class="egrant-qty">${fmtN(g.active)} opções</span></div>
+      <div class="egrant-meta">Vesting: ${g.vesting} · Cliff: ${g.cliff}</div>
+      <div class="egrant-meta">Vestidas: <strong>${fmtN(v)}</strong> (${p}%)</div>
+      <div class="vbar-wrap"><div class="vbar-fill" style="width:${p}%"></div></div></div>`;
+    }).join('')}</div></div>`;
+  }
+  // Performance block
+  const perfEl = document.getElementById('m-perf');
+  if (perf && perf.nota) {
+    const cls = perfZoneClass(perf.zona);
+    perfEl.innerHTML = `<div class="perf-wrap">
+      <div class="perf-score ${cls}">${perf.nota}</div>
+      <div class="perf-meta">
+        <div class="perf-zone ${cls}">${perf.zona||'—'}</div>
+        <div class="perf-label">Nota Final · Resultado Geral</div>
+      </div>
+    </div>`;
+  } else {
+    perfEl.innerHTML = '<div class="perf-none-msg">Avaliação não disponível ou pendente.</div>';
+  }
+
+  const sv=loadM(curName);
+  document.getElementById('m-mdate').value=sv?sv.date:'';
+  document.getElementById('m-mnote').value=sv?(sv.note||''):'';
+  document.getElementById('m-msaved').textContent=sv&&sv.date?`Último mérito: ${fmtDate(sv.date)}`:'';
+
+  document.getElementById('m-projeto').value = loadProj(curName);
+  document.getElementById('m-projeto-saved').textContent = '';
+  updateProjetoDisplay(curName);
+
+  // ESOP pill in header
+  const esopPill = document.getElementById('m-esop-pill');
+  esopPill.innerHTML = (grants&&grants.length) ? '<span class="esop-pill">ESOP</span>' : '';
+
+  // Status in header
+  const modalApplyStatus = (val) => {
+    const btn = document.getElementById('m-status-btn');
+    btn.className = 'status-btn '+STATUS_CLASS[val];
+    btn.textContent = val==='none' ? '···' : STATUS_LABELS[val];
+  };
+  modalApplyStatus(loadStatus(curName));
+  const mStatusBtn = document.getElementById('m-status-btn');
+  const mStatusMenu = document.getElementById('m-status-menu');
+  mStatusBtn.onclick = (e) => { e.stopPropagation(); mStatusMenu.classList.toggle('open'); };
+  mStatusMenu.querySelectorAll('[data-val]').forEach(opt => {
+    opt.onclick = (e) => {
+      e.stopPropagation();
+      saveStatus(curName, opt.dataset.val);
+      modalApplyStatus(opt.dataset.val);
+      mStatusMenu.classList.remove('open');
+    };
+  });
+
+  document.getElementById('ov').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('ov').classList.remove('open');
+  document.getElementById('m-status-menu').classList.remove('open');
+}
+function saveMerit(){
+  const d=document.getElementById('m-mdate').value,n=document.getElementById('m-mnote').value;
+  saveM(curName,d,n);
+  const el=document.getElementById('m-msaved');
+  el.textContent='✓ Salvo'+(d?` · ${fmtDate(d)}`:'');
+  setTimeout(()=>{el.textContent=d?`Último mérito: ${fmtDate(d)}`:'';},2000);
+}
+function saveProjeto(){
+  const txt=document.getElementById('m-projeto').value;
+  const dateStr=new Date().toLocaleDateString('pt-BR');
+  saveProj(curName,txt);
+  localStorage.setItem('projeto_date_'+norm(curName).replace(/ /g,'_'), dateStr);
+  const el=document.getElementById('m-projeto-saved');
+  el.textContent='✓ Salvo em '+dateStr;
+  setTimeout(()=>{el.textContent='';updateProjetoDisplay(curName);},1500);
+}
+function clearProjeto(){
+  clearProj(curName);
+  localStorage.removeItem('projeto_date_'+norm(curName).replace(/ /g,'_'));
+  document.getElementById('m-projeto').value='';
+  const el=document.getElementById('m-projeto-saved');
+  el.textContent='✓ Campo limpo';
+  setTimeout(()=>{el.textContent='';updateProjetoDisplay(curName);},1500);
+}
+
+// ── SEARCH ───────────────────────────────────────────────────────────────────
+function doSearch(q){
+  const all=document.querySelectorAll('.node');
+  if(!q.trim()){all.forEach(c=>{c.classList.remove('hl','dim');});return;}
+  const qn=norm(q);
+  all.forEach(c=>{
+    norm(c.dataset.name||'').includes(qn)?(c.classList.add('hl'),c.classList.remove('dim')):(c.classList.add('dim'),c.classList.remove('hl'));
+  });
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function doLogin(){
+  if(document.getElementById('pw').value==='Musers2026'){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    // Pre-seed merit raises
+    // ── Pre-seed merit history for Sep/2026 raises (only if not yet set) ──
+  if(!localStorage.getItem('merit_anderson_da_silva_ferreira')) localStorage.setItem('merit_anderson_da_silva_ferreira', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 35.000 → 40.000 (+14,3%)'}));
+  if(!localStorage.getItem('merit_avila_ramony_ferreira_da_silva')) localStorage.setItem('merit_avila_ramony_ferreira_da_silva', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 2.253 → 3.500 (+55,3%)'}));
+  if(!localStorage.getItem('merit_carlos_henrique_alves_dos_santos')) localStorage.setItem('merit_carlos_henrique_alves_dos_santos', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 15.585 → 17.922 (+15%)'}));
+  if(!localStorage.getItem('merit_cassio_rafael_oliveira_silva')) localStorage.setItem('merit_cassio_rafael_oliveira_silva', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 35.000 → 40.000 (+14,3%)'}));
+  if(!localStorage.getItem('merit_danielle_bispo_da_silva')) localStorage.setItem('merit_danielle_bispo_da_silva', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 2.640 → 3.500 (+32,6%)'}));
+  if(!localStorage.getItem('merit_isabelle_soares_emilio')) localStorage.setItem('merit_isabelle_soares_emilio', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 6.190 → 7.000 (+13,1%)'}));
+  if(!localStorage.getItem('merit_laiz_monteiro_zumba')) localStorage.setItem('merit_laiz_monteiro_zumba', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 3.417 → 5.000 (+46,3%)'}));
+  if(!localStorage.getItem('merit_laura_rocha_de_souza')) localStorage.setItem('merit_laura_rocha_de_souza', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 2.541 → 3.800 (+49,5%) + nova função: Advogada Jr'}));
+  if(!localStorage.getItem('merit_lucas_freitas_dos_santos_da_silva')) localStorage.setItem('merit_lucas_freitas_dos_santos_da_silva', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 2.495 → 3.500 (+40,3%)'}));
+  if(!localStorage.getItem('merit_simmon_ki_shik_nam')) localStorage.setItem('merit_simmon_ki_shik_nam', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 60.000 → 70.000 (+16,7%)'}));
+  if(!localStorage.getItem('merit_tainara_alves_sambinelli')) localStorage.setItem('merit_tainara_alves_sambinelli', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 8.613 → 10.000 (+16,1%)'}));
+  if(!localStorage.getItem('merit_vitoria_alves_de_araujo_dimas')) localStorage.setItem('merit_vitoria_alves_de_araujo_dimas', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: 13.200 → 14.500 (+9,8%)'}));
+  if(!localStorage.getItem('merit_martin_amaury_poutrel_junck')) localStorage.setItem('merit_martin_amaury_poutrel_junck', JSON.stringify({date:'2026-09-01',note:'Reajuste Set/2026: Custo total: 78.218 → 98.018 (+25,3%)'}));
+    renderOrg();
+  } else {
+    document.getElementById('lerr').textContent='Senha incorreta.';
+    document.getElementById('pw').value='';
+    document.getElementById('pw').focus();
+  }
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ closeModal(); closeNHModal(); }
+});
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+  if(tab==='futuro') renderOrgFuturo();
+}
+
+// ── NEW HIRE STORAGE ──────────────────────────────────────────────────────────
+function nhKey(){ return 'nh_positions_v1'; }
+function loadNHList(){ try{ return JSON.parse(localStorage.getItem(nhKey())||'[]'); }catch{ return []; } }
+function saveNHList(list){ localStorage.setItem(nhKey(), JSON.stringify(list)); }
+
+function openNHModal(editId) {
+  document.getElementById('nh-modal-title').textContent = editId ? 'Editar Posição' : 'Nova Posição';
+  document.getElementById('nh-edit-id').value = editId || '';
+  if(editId) {
+    const list = loadNHList();
+    const item = list.find(x=>x.id===editId);
+    if(item) {
+      document.querySelector(`input[name="nh-tipo"][value="${item.tipo}"]`).checked = true;
+      toggleReplaceField();
+      document.getElementById('nh-replace-name').value = item.replaceName||'';
+      document.getElementById('nh-cargo').value = item.cargo||'';
+      document.getElementById('nh-sal').value = item.sal||'';
+      document.getElementById('nh-esop').value = item.esop||'';
+      document.getElementById('nh-manager').value = item.manager||'';
+      document.getElementById('nh-atividade').value = item.atividade||'';
+    }
+  } else {
+    document.getElementById('nh-newhc').checked = true;
+    toggleReplaceField();
+    ['nh-replace-name','nh-cargo','nh-sal','nh-esop','nh-manager','nh-atividade'].forEach(id=>document.getElementById(id).value='');
+  }
+  document.getElementById('nh-saved-msg').textContent='';
+  document.getElementById('nh-ov').style.display='flex';
+}
+function closeNHModal(){ document.getElementById('nh-ov').style.display='none'; }
+function toggleReplaceField(){
+  const isReplace = document.getElementById('nh-replace').checked;
+  document.getElementById('nh-replace-field').style.display = isReplace ? 'block' : 'none';
+}
+function saveNH(){
+  const editId = document.getElementById('nh-edit-id').value;
+  const item = {
+    id: editId || 'nh_'+Date.now(),
+    tipo: document.querySelector('input[name="nh-tipo"]:checked').value,
+    replaceName: document.getElementById('nh-replace-name').value.trim(),
+    cargo: document.getElementById('nh-cargo').value.trim(),
+    sal: document.getElementById('nh-sal').value.trim(),
+    esop: document.getElementById('nh-esop').value.trim(),
+    manager: document.getElementById('nh-manager').value.trim(),
+    atividade: document.getElementById('nh-atividade').value.trim(),
+    savedAt: new Date().toLocaleDateString('pt-BR'),
+  };
+  let list = loadNHList();
+  if(editId) { list = list.map(x=>x.id===editId?item:x); }
+  else { list.push(item); }
+  saveNHList(list);
+  const msg = document.getElementById('nh-saved-msg');
+  msg.textContent='✓ Posição salva em '+item.savedAt;
+  setTimeout(()=>closeNHModal(), 1200);
+}
+function deleteNH(id){
+  if(!confirm('Remover esta posição?')) return;
+  saveNHList(loadNHList().filter(x=>x.id!==id));
+  renderOrgFuturo();
+}
+
+// ── PROJETO CARD DISPLAY ──────────────────────────────────────────────────────
+function updateProjetoDisplay(name) {
+  const txt = loadProj(name);
+  const el = document.getElementById('m-projeto-display');
+  if(!el) return;
+  if(txt) {
+    const savedDate = localStorage.getItem('projeto_date_'+norm(name).replace(/ /g,'_'))||'';
+    el.innerHTML = `<div class="projeto-saved-box"><div class="projeto-saved-date">Salvo${savedDate?' em '+savedDate:''}</div><div class="projeto-saved-text">${txt.replace(/</g,'&lt;')}</div></div>`;
+  } else { el.innerHTML=''; }
+}
+
+// ── ORG FUTURO ────────────────────────────────────────────────────────────────
+function renderOrgFuturo(){
+  const root = document.getElementById('org-root-futuro');
+  if(!root) return;
+  // Clone the current org
+  const currentOrg = document.getElementById('org-root');
+  root.innerHTML = currentOrg.innerHTML;
+  root.style.cssText = currentOrg.style.cssText;
+
+  // Re-apply RAF alignments
+  requestAnimationFrame(()=>{
+    const headCards = Array.from(root.querySelectorAll('.node.head'));
+    let maxH=0; headCards.forEach(c=>{const t=c.getBoundingClientRect().top;if(t>maxH)maxH=t;});
+    headCards.forEach(c=>{const diff=maxH-c.getBoundingClientRect().top;if(diff>0){const p=c.parentElement;p.style.paddingTop=(parseInt(p.style.paddingTop||'0')+diff)+'px';}});
+    requestAnimationFrame(()=>{
+      const teamCols=Array.from(root.querySelectorAll('[data-teamcol]'));
+      const firstNodes=teamCols.map(col=>col.querySelector('.node')).filter(Boolean);
+      let maxT=0; firstNodes.forEach(n=>{const t=n.getBoundingClientRect().top;if(t>maxT)maxT=t;});
+      firstNodes.forEach(n=>{const diff=maxT-n.getBoundingClientRect().top;if(diff>1){const col=n.closest('[data-teamcol]');col.style.paddingTop=(parseInt(col.style.paddingTop||'0')+diff)+'px';}});
+    });
+  });
+
+  const nhList = loadNHList();
+  if(!nhList.length) {
+    document.getElementById('futuro-banner-text').textContent = `${EMP.length} colaboradores ativos · Nenhuma nova posição adicionada.`;
+    return;
+  }
+  const newHCs = nhList.filter(x=>x.tipo==='new-hc').length;
+  const replaces = nhList.filter(x=>x.tipo==='replace').length;
+  const futuroTotal = EMP.length + newHCs;
+  document.getElementById('futuro-banner-text').textContent = `${futuroTotal} colaboradores (futuro) · ${newHCs} new hire(s) · ${replaces} replace(s) · Atual: ${EMP.length}`;
+
+  // ── Pass 0: copy status tags + mark "vai sair" onto cloned nodes ──────────
+  Array.from(root.querySelectorAll('.node')).forEach(node => {
+    const name = node.dataset.name || '';
+    // Status badge
+    const st = loadStatus(name);
+    if(st && st !== 'none') {
+      const pill = document.createElement('span');
+      pill.className = 'status-btn ' + STATUS_CLASS[st];
+      pill.textContent = STATUS_LABELS[st];
+      pill.style.cssText = 'display:inline-block;margin-top:5px;pointer-events:none;';
+      node.appendChild(pill);
+    }
+    // "Vai sair" — mark anyone whose name matches a replace's replaceName
+    const isVaiSair = nhList.some(x =>
+      x.tipo==='replace' && x.replaceName &&
+      norm(x.replaceName).split(' ').filter(w=>w.length>2).some(w => norm(name).split(' ').includes(w))
+    );
+    if(isVaiSair) {
+      const tag = document.createElement('span');
+      tag.style.cssText = 'display:inline-block;margin-top:4px;font-size:.52rem;font-weight:bold;background:#fde8e8;color:#a33;border-radius:4px;padding:2px 6px;pointer-events:none;';
+      tag.textContent = 'Vai sair';
+      node.appendChild(tag);
+    }
+  });
+
+  // ── Pass 1: process all Replaces first ───────────────────────────────────
+  nhList.filter(x=>x.tipo==='replace' && x.replaceName).forEach(item => {
+    const nodes = Array.from(root.querySelectorAll('.node, .nh-card'));
+    const target = nodes.find(n => {
+      const nn = norm(n.dataset.name||n.querySelector('.nh-label')?.textContent||'');
+      return nn.includes(norm(item.replaceName)) || norm(item.replaceName).includes(nn);
+    });
+    if(target) {
+      const card = buildNHCard(item, true);
+      card.dataset.name = item.replaceName;
+      card.dataset.nhId = item.id;
+      target.parentNode.replaceChild(card, target);
+    }
+  });
+
+  // ── Pass 2: process New HCs ───────────────────────────────────────────────
+  function findTeamColOfReplace(replaceName) {
+    const allCards = Array.from(root.querySelectorAll('.nh-card'));
+    const replaceCard = allCards.find(c => {
+      const lbl = c.querySelector('.nh-label');
+      return lbl && (norm(lbl.textContent).includes(norm(replaceName)) || norm(replaceName).includes(norm(lbl.textContent)));
+    });
+    if(!replaceCard) return null;
+    return replaceCard.closest('[data-teamcol]') || replaceCard.parentElement;
+  }
+  function managerIsReplace(managerStr) {
+    const mn = norm(managerStr);
+    return nhList.some(x => x.tipo==='replace' && norm(x.replaceName||'').split(' ').filter(w=>w.length>2).some(w => mn.split(' ').includes(w)));
+  }
+  function findCSCol() {
+    return Array.from(root.querySelectorAll('[data-teamcol]')).find(col => {
+      const lbl = col.querySelector('.sec-lbl');
+      return lbl && norm(lbl.textContent).includes('cs');
+    });
+  }
+  function findMktCol() {
+    return Array.from(root.querySelectorAll('[data-teamcol]')).find(col => {
+      const lbl = col.querySelector('.sec-lbl');
+      return lbl && norm(lbl.textContent).includes('marketing');
+    });
+  }
+
+  // Separate KA/CX cards to place as a row, and Head MKT to place above Alex
+  const kaCards = [];
+  const headMktCards = [];
+
+  nhList.filter(x=>x.tipo==='new-hc').forEach(item => {
+    const cargo = norm(item.cargo||'');
+    const manager = norm(item.manager||'');
+    const card = buildNHCard(item, false);
+
+    // Head MKT → goes above Alex (as a branch head above MKT col)
+    const isHeadMkt = cargo.includes('head') && (cargo.includes('mkt') || cargo.includes('marketing') || cargo.includes('marketing'));
+    if(isHeadMkt) {
+      headMktCards.push({item, card}); return;
+    }
+
+    // Key Account or CX → collect for row placement in CS col
+    const isCS = cargo.includes('key account') || cargo.includes('cx engineer') || cargo.includes('cx') || cargo.includes('customer experience');
+    if(isCS) {
+      kaCards.push({item, card}); return;
+    }
+
+    // Reporting to a Replace → place in that replace's col
+    if(item.manager && managerIsReplace(item.manager)) {
+      const replaceItem = nhList.find(x =>
+        x.tipo==='replace' &&
+        norm(x.replaceName||'').split(' ').filter(w=>w.length>2).some(w => manager.split(' ').includes(w))
+      );
+      if(replaceItem) {
+        const col = findTeamColOfReplace(replaceItem.replaceName);
+        if(col) { col.appendChild(card); return; }
+      }
+    }
+
+    // Default: place by manager
+    appendNHCard(root, item);
+  });
+
+  // ── Place Head MKT above Alex, as a branch above the MKT teamcol ─────────
+  if(headMktCards.length) {
+    const mktCol = findMktCol();
+    if(mktCol) {
+      // Insert a branch structure: vline + head card above the mktCol
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;';
+      headMktCards.forEach(({card}) => {
+        wrapper.appendChild(card);
+        const vl = document.createElement('div');
+        vl.className = 'v-line';
+        wrapper.appendChild(vl);
+      });
+      // Move mktCol inside wrapper
+      mktCol.parentNode.insertBefore(wrapper, mktCol);
+      wrapper.appendChild(mktCol);
+    } else {
+      headMktCards.forEach(({item}) => appendNHCard(root, item));
+    }
+  }
+
+  // ── Place all KA/CX cards as a horizontal row inside CS col ──────────────
+  if(kaCards.length) {
+    const csCol = findCSCol();
+    if(csCol) {
+      // Create a horizontal row for KAs at the same level
+      const kaRow = document.createElement('div');
+      kaRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:4px;';
+      kaCards.forEach(({card}) => {
+        card.style.width = '130px'; // slightly narrower to fit in row
+        kaRow.appendChild(card);
+      });
+      csCol.appendChild(kaRow);
+    } else {
+      kaCards.forEach(({item}) => appendNHCard(root, item));
+    }
+  }
+}
+
+function buildNHCard(item, isReplace){
+  const div = document.createElement('div');
+  div.className = 'nh-card';
+  const typeLabel = item.tipo==='new-hc' ? 'New Hire' : `Replace · ${item.replaceName||'?'}`;
+  const typeCls = item.tipo==='new-hc' ? 'new-hc' : 'replace';
+  div.innerHTML = `
+    <div class="nh-type ${typeCls}">${typeLabel}</div>
+    <div class="nh-label">${item.cargo||'Cargo a definir'}</div>
+    ${item.sal?`<div class="nh-role">${item.sal}</div>`:''}
+    ${item.manager?`<div class="nh-manager">↳ ${item.manager}</div>`:''}
+    <div style="display:flex;gap:5px;margin-top:6px;">
+      <button onclick="openNHModal('${item.id}')" style="font-size:.58rem;padding:2px 7px;border-radius:4px;border:1px solid #c8a400;background:#fff8e0;color:#7a5800;cursor:pointer;font-family:'Georgia',serif;">Editar</button>
+      <button onclick="deleteNH('${item.id}')" style="font-size:.58rem;padding:2px 7px;border-radius:4px;border:1px solid #e0b0b0;background:#fff0f0;color:#a33;cursor:pointer;font-family:'Georgia',serif;">Remover</button>
+    </div>
+    <div style="font-size:.58rem;color:#aaa;margin-top:4px;">Adicionado ${item.savedAt}</div>`;
+  return div;
+}
+
+function appendNHCard(root, item){
+  // Try to find the manager's team column
+  const nodes = Array.from(root.querySelectorAll('.node'));
+  const managerNode = item.manager ? nodes.find(n => {
+    const nn = norm(n.dataset.name||'');
+    const mn = norm(item.manager);
+    return nn===mn || nn.includes(mn) || mn.includes(nn);
+  }) : null;
+
+  const card = buildNHCard(item, false);
+
+  if(managerNode) {
+    // find closest data-teamcol ancestor or sibling group
+    let teamCol = managerNode.closest('[data-teamcol]');
+    if(!teamCol) {
+      // manager IS a head — find the team div right after the vline below
+      const branchContainer = managerNode.parentElement;
+      const children = Array.from(branchContainer.children);
+      const vlineIdx = children.findIndex(c=>c.className==='v-line');
+      if(vlineIdx>=0 && children[vlineIdx+1]) {
+        const teamArea = children[vlineIdx+1];
+        const firstTeamCol = teamArea.querySelector('[data-teamcol]');
+        if(firstTeamCol) { firstTeamCol.appendChild(card); return; }
+        teamArea.appendChild(card);
+        return;
+      }
+    } else {
+      teamCol.appendChild(card);
+      return;
+    }
+  }
+  // fallback: float at bottom of futuro canvas
+  const floatWrap = document.getElementById('org-canvas-futuro');
+  const floatDiv = document.createElement('div');
+  floatDiv.style.cssText='margin:24px auto 0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:0 16px;';
+  floatDiv.innerHTML='<div style="width:100%;text-align:center;font-size:.75rem;color:var(--muted);margin-bottom:6px;font-family:Georgia,serif;">Novas posições sem área definida</div>';
+  floatDiv.appendChild(card);
+  floatWrap.appendChild(floatDiv);
+}
+</script>
+
+<!-- NEW HIRE MODAL -->
+<div id="nh-ov" onclick="if(event.target===this)closeNHModal()" style="position:fixed;inset:0;background:rgba(34,34,34,.55);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);">
+  <div style="background:#fff;border-radius:var(--r);width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);">
+    <div style="background:#7a5800;padding:20px 26px 16px;border-radius:var(--r) var(--r) 0 0;position:sticky;top:0;">
+      <div style="font-size:1.1rem;font-weight:bold;color:#fff;font-family:'Georgia',serif;" id="nh-modal-title">Nova Posição</div>
+      <button onclick="closeNHModal()" style="position:absolute;top:16px;right:18px;background:none;border:none;color:#ccc;font-size:1.3rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:22px 26px 26px;display:flex;flex-direction:column;gap:14px;">
+      <input type="hidden" id="nh-edit-id">
+      <div>
+        <div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:bold;border-bottom:1px solid var(--border);padding-bottom:5px;margin-bottom:10px;">Tipo de Posição</div>
+        <div style="display:flex;gap:10px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.88rem;font-family:'Georgia',serif;">
+            <input type="radio" name="nh-tipo" value="new-hc" id="nh-newhc" checked onchange="toggleReplaceField()"> Novo Headcount
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.88rem;font-family:'Georgia',serif;">
+            <input type="radio" name="nh-tipo" value="replace" id="nh-replace" onchange="toggleReplaceField()"> Replace
+          </label>
+        </div>
+      </div>
+      <div id="nh-replace-field" style="display:none;">
+        <div class="mf"><label style="display:block;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">Substituir quem</label>
+        <input type="text" id="nh-replace-name" placeholder="Nome da pessoa a ser substituída" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:.88rem;font-family:'Georgia',serif;background:#fff;outline:none;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="mf"><label style="display:block;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">Cargo</label>
+        <input type="text" id="nh-cargo" placeholder="ex: Analista de Dados Pl." style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:.88rem;font-family:'Georgia',serif;background:#fff;outline:none;"></div>
+        <div class="mf"><label style="display:block;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">Salário Previsto</label>
+        <input type="text" id="nh-sal" placeholder="ex: R$ 8.000" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:.88rem;font-family:'Georgia',serif;background:#fff;outline:none;"></div>
+        <div class="mf"><label style="display:block;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">ESOP (opções)</label>
+        <input type="text" id="nh-esop" placeholder="ex: 10.000" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:.88rem;font-family:'Georgia',serif;background:#fff;outline:none;"></div>
+        <div class="mf"><label style="display:block;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">Reporta para</label>
+        <input type="text" id="nh-manager" placeholder="ex: Cássio Rafael" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:.88rem;font-family:'Georgia',serif;background:#fff;outline:none;"></div>
+      </div>
+      <div class="mf"><label style="display:block;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">Atividade / Escopo</label>
+      <textarea id="nh-atividade" rows="3" placeholder="Descreva as principais responsabilidades…" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:.88rem;font-family:'Georgia',serif;background:#fff;outline:none;resize:vertical;"></textarea></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;">
+        <div id="nh-saved-msg" style="font-size:.78rem;color:#4a8f4a;"></div>
+        <button onclick="saveNH()" style="padding:9px 22px;background:var(--black);color:#fff;border:none;border-radius:6px;font-size:.88rem;font-family:'Georgia',serif;cursor:pointer;">Salvar Posição</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
